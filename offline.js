@@ -6,7 +6,7 @@ const BD = '০১২৩৪৫৬৭৮৯', bn = v => String(v).replace(/\d/g, 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const toast = m => (window.NZ && NZ.toast ? NZ.toast(m) : alert(m));
 const store = { get: (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
-const V = 5;
+const V = 6;
 const RECITERS = [           // everyayah.com folders (per-ayah MP3, CORS enabled so they can be saved offline)
   ['ar.alafasy', 'Alafasy_128kbps', 'মিশারি রাশিদ আল-আফাসি'],
   ['ar.husary', 'Husary_128kbps', 'মাহমুদ খলীল আল-হুসারী'],

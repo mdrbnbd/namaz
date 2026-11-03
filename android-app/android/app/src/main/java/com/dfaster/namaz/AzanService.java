@@ -19,7 +19,7 @@ import android.os.PowerManager;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.ServiceCompat;
 
-/** Foreground service that plays the full azan once (res/raw/azan.ogg, or res/raw/azan_fajr.ogg when sound=="fajr"), with a "বন্ধ করুন" (stop) action. */
+/** Foreground service that plays the full azan once on the ALARM stream at maximum volume (res/raw/azan.ogg, or res/raw/azan_fajr.ogg when sound=="fajr"), with a "বন্ধ করুন" (stop) action. */
 public class AzanService extends Service {
     static final String CH = "azan_v1";
     static final String STOP = "com.dfaster.namaz.STOP_AZAN";
@@ -27,6 +27,7 @@ public class AzanService extends Service {
     private MediaPlayer mp;
     private AudioManager audio;
     private AudioFocusRequest focus;
+    private int savedAlarmVol = -1;
 
     static void ensureChannel(Context ctx) {
         if (Build.VERSION.SDK_INT < 26) return;
@@ -81,6 +82,12 @@ public class AzanService extends Service {
             focus = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK).setAudioAttributes(aa).build();
             if (audio.requestAudioFocus(focus) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) { finishKeepNotification(); return; } // e.g. during a phone call
         }
+        // play loud: raise the ALARM stream to its maximum while the azan plays, restore the user's level afterwards
+        try {
+            int max = audio.getStreamMaxVolume(AudioManager.STREAM_ALARM);
+            int cur = audio.getStreamVolume(AudioManager.STREAM_ALARM);
+            if (cur < max) { savedAlarmVol = cur; audio.setStreamVolume(AudioManager.STREAM_ALARM, max, 0); }
+        } catch (Exception ignored) {}
         try {
             mp = new MediaPlayer();
             mp.setAudioAttributes(aa);
@@ -89,6 +96,7 @@ public class AzanService extends Service {
             mp.setOnCompletionListener(m -> finishKeepNotification());
             mp.setOnErrorListener((m, w, e) -> { finishKeepNotification(); return true; });
             mp.prepare();
+            mp.setVolume(1f, 1f);
             mp.start();
         } catch (Exception e) {
             finishKeepNotification();
@@ -98,6 +106,10 @@ public class AzanService extends Service {
     private void stopPlayer() {
         if (mp != null) { try { mp.stop(); } catch (Exception ignored) {} mp.release(); mp = null; }
         if (audio != null && focus != null && Build.VERSION.SDK_INT >= 26) audio.abandonAudioFocusRequest(focus);
+        if (audio != null && savedAlarmVol >= 0) {
+            try { audio.setStreamVolume(AudioManager.STREAM_ALARM, savedAlarmVol, 0); } catch (Exception ignored) {}
+            savedAlarmVol = -1;
+        }
     }
     /** azan finished: keep the notification in the shade, stop the service */
     private void finishKeepNotification() {

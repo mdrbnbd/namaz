@@ -1,5 +1,5 @@
-const CACHE = 'namaz-v5';
-const SHELL = ['./', 'index.html', 'styles.css?v=5', 'app.js?v=5', 'districts.js?v=5', 'install.js?v=5', 'offline.js?v=5', 'quran.js?v=5', 'native.js?v=5', 'data/quran/index.json?v=5', 'data/quran/sizes.json?v=5', 'data/surah-guide.json?v=5', 'manifest.json?v=5', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-192.png', 'icons/maskable-512.png'];
+const CACHE = 'namaz-v6';
+const SHELL = ['./', 'index.html', 'styles.css?v=6', 'app.js?v=6', 'districts.js?v=6', 'install.js?v=6', 'offline.js?v=6', 'quran.js?v=6', 'native.js?v=6', 'data/quran/index.json?v=6', 'data/quran/sizes.json?v=6', 'data/surah-guide.json?v=6', 'manifest.json?v=6', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-192.png', 'icons/maskable-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE && k !== 'namaz-quran-audio').map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {

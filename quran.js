@@ -7,7 +7,7 @@ const bn = v => String(v).replace(/\d/g, d => BD[d]);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const toast = m => (window.NZ && NZ.toast ? NZ.toast(m) : alert(m));
 const store = { get: (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
-const V = 5;
+const V = 6;
 const DL = window.NZDL;                 // offline.js (loaded first): reciters, storage, download queue
 const RECITERS = DL.RECITERS;
 let reciter = store.get('nz-reciter', 'ar.alafasy'); if (!RECITERS.some(r => r[0] === reciter)) reciter = 'ar.alafasy';

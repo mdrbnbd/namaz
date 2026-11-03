@@ -57,7 +57,9 @@ const KEY = 'nz-notify';
 const toggle = $('#notifyToggle');
 const NAMES = {Fajr: 'ফজর', Dhuhr: 'যোহর', Asr: 'আসর', Maghrib: 'মাগরিব', Isha: 'এশা'};
 const GEN = {Fajr: 'ফজরের', Dhuhr: 'যোহরের', Asr: 'আসরের', Maghrib: 'মাগরিবের', Isha: 'এশার'};
-const supported = 'Notification' in window;
+// Android app: the native AzanService plays the full azan at every waqt, so the short web notification is never used there
+const isNativeApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+const supported = 'Notification' in window && !isNativeApp;
 if (!supported) {
   toggle.disabled = true;
   $('#notifyNote').textContent = isIOS && !isStandalone()
