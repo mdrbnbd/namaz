@@ -95,16 +95,46 @@ addEventListener('popstate', () => {
 });
 
 // ---------- player ----------
+// Continuous recitation: once started it plays ayah after ayah to the end of the surah, then the next surah, ...
+// up to An-Nas (114). It stops only when the user presses pause/stop.
+// Android app: a native foreground media service (QuranAudio) plays it, so it keeps going with the screen off / app in background.
+const CAP = window.Capacitor;
+const QA = CAP && CAP.isNativePlatform && CAP.isNativePlatform() && CAP.isPluginAvailable && CAP.isPluginAvailable('QuranAudio') ? (CAP.Plugins.QuranAudio || CAP.registerPlugin('QuranAudio')) : null;
 const au = new Audio(); au.preload = 'auto';
 const pl = {n: 0, from: 1, to: 0, a: 0, g: 0};
+let nat = {active: false, playing: false};          // last state reported by the native player
+const paused = () => QA ? !nat.playing : au.paused;
 const player = {
-  playing: () => !au.paused,
-  async start(n, from = 1, to = 0) {
+  playing: () => !paused(),
+  async start(n, from = 1) {
     await index(); const s = await surah(n);
-    Object.assign(pl, {n, from, to: to || s.a.length, a: from, g: s.g});
+    Object.assign(pl, {n, from: 1, to: s.a.length, a: from, g: s.g});
     play();
   },
 };
+function toggle() {
+  if (QA) { nat.playing = !nat.playing; syncBar(); return QA.toggle().then(applyNat).catch(() => {}); }
+  au.paused ? au.play().catch(() => {}) : au.pause();
+}
+function applyNat(st) {
+  if (!st) return;
+  nat = st;
+  if (!st.active) { if (pl.n) { pl.n = 0; $('#qBar').classList.add('hidden'); document.body.classList.remove('has-qbar'); highlight(); } syncBar(); return; }
+  const moved = st.n !== pl.n || st.a !== pl.a;
+  if (st.n !== pl.n && IDX) Object.assign(pl, {n: st.n, from: 1, to: IDX[st.n - 1].c});
+  pl.n = st.n; pl.a = st.a;
+  if (moved) { store.set('nz-qlast', {n: pl.n, a: pl.a}); showBar(); highlight(true); }
+  $('#qbSub').textContent = `আয়াত ${bn(pl.a)} / ${bn(pl.to)} · ${rc()[2]}` + (st.status === 'waiting-net' ? ' · ইন্টারনেটের অপেক্ষায়…' : st.local ? ' · অফলাইন' : '');
+  syncBar();
+}
+if (QA) {
+  const poll = () => QA.getState().then(applyNat).catch(() => {});
+  setInterval(() => { if (!document.hidden && (nat.active || pl.n)) poll(); }, 1000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) index().then(poll); });
+  index().then(poll).catch(() => {});
+}
+let netWait = false, errs = 0;
+window.addEventListener('online', () => { if (netWait && pl.n) { netWait = false; play(); } });
 let blobUrl = null;
 async function srcFor(n, a) {        // downloaded audio plays from the phone (Filesystem in the app, Cache API in the browser)
   if (blobUrl) { URL.revokeObjectURL(blobUrl); blobUrl = null; }
@@ -113,11 +143,19 @@ async function srcFor(n, a) {        // downloaded audio plays from the phone (F
   return audioUrl(n, a);
 }
 async function play() {
+  if (QA) {
+    await index();
+    showBar(); highlight(true); store.set('nz-qlast', {n: pl.n, a: pl.a});
+    nat = Object.assign({}, nat, {active: true, playing: true}); syncBar();
+    try { applyNat(await QA.start({n: pl.n, a: pl.a, folder: DL.rec(reciter)[1], reciter: rc()[2], names: IDX.map(s => s.bn)})); }
+    catch (e) { toast('তিলাওয়াত চালু করা যায়নি: ' + (e && e.message || e)); }
+    return;
+  }
   const want = pl.n + ':' + pl.a;
   const src = await srcFor(pl.n, pl.a);
   if (want !== pl.n + ':' + pl.a) return;
   au.src = src;
-  au.play().catch(() => toast('অডিও চালানো যায়নি — ইন্টারনেট সংযোগ দেখুন'));
+  au.play().catch(e => { if (e && e.name === 'NotAllowedError') toast('▶ চাপুন — ব্রাউজার নিজে থেকে অডিও চালাতে দিচ্ছে না'); });
   store.set('nz-qlast', {n: pl.n, a: pl.a});
   showBar(); highlight(true);
   if ('mediaSession' in navigator) {
@@ -125,22 +163,28 @@ async function play() {
   }
 }
 function step(d) {
+  if (QA) { const f = d > 0 ? QA.next() : QA.prev(); return f.then(applyNat).catch(() => {}); }
   const na = pl.a + d;
-  if (na < pl.from || na > pl.to) {
-    if (d > 0 && pl.to === IDX[pl.n - 1].c && store.get('nz-qauto', false) && pl.n < 114) return player.start(pl.n + 1);
-    return stop(d > 0);
-  }
+  if (na > pl.to) return pl.n < 114 ? player.start(pl.n + 1, 1) : stop(true);              // end of surah -> next surah
+  if (na < 1) return pl.n > 1 ? index().then(() => player.start(pl.n - 1, IDX[pl.n - 2].c)) : undefined;
   pl.a = na; play();
 }
 function stop(ended) {
+  if (QA) { nat = {active: false, playing: false}; QA.stop().catch(() => {}); }
   au.pause(); $('#qBar').classList.add('hidden'); pl.n = 0; highlight();
   document.body.classList.remove('has-qbar');
   if (ended) toast('তিলাওয়াত শেষ');
 }
-au.addEventListener('ended', () => step(1));
-au.addEventListener('error', () => { if (pl.n) { toast('এই আয়াতের অডিও পাওয়া যায়নি'); setTimeout(() => step(1), 800); } });
+au.addEventListener('ended', () => { errs = 0; step(1); });
+au.addEventListener('playing', () => { errs = 0; });
+au.addEventListener('error', () => {
+  if (!pl.n || !au.getAttribute('src')) return;
+  if (!navigator.onLine) { netWait = true; toast('ইন্টারনেট নেই — সংযোগ ফিরলে তিলাওয়াত আবার চলবে'); return; }
+  if (++errs <= 2) return setTimeout(play, 1500);          // retry the same ayah, then skip it
+  errs = 0; toast('এই আয়াতের অডিও পাওয়া যায়নি'); setTimeout(() => step(1), 500);
+});
 au.addEventListener('play', syncBar); au.addEventListener('pause', syncBar);
-function syncBar() { $('#qbPlay').textContent = au.paused ? '▶' : '⏸'; document.querySelectorAll('.r-playall').forEach(b => b.textContent = (!au.paused && cur && pl.n === cur.n) ? '⏸ বিরতি' : '▶ পুরো সূরা শুনুন'); }
+function syncBar() { $('#qbPlay').textContent = paused() ? '▶' : '⏸'; document.querySelectorAll('.r-playall').forEach(b => b.textContent = (!paused() && cur && pl.n === cur.n) ? '⏸ বিরতি' : '▶ পুরো সূরা শুনুন'); }
 function showBar() {
   $('#qBar').classList.remove('hidden'); document.body.classList.add('has-qbar');
   $('#qbName').textContent = `সূরা ${meta(pl.n).bn}`;
@@ -224,7 +268,6 @@ document.addEventListener('nz-tab', e => {
 let qt; document.addEventListener('input', e => { if (e.target.id === 'qSearch') { clearTimeout(qt); qt = setTimeout(renderList, 150); } });
 document.addEventListener('change', e => {
   if (e.target.id === 'qReciter') { setReciter(e.target.value); toast('ক্বারী: ' + rc()[2]); }
-  if (e.target.id === 'qAuto') store.set('nz-qauto', e.target.checked);
 });
 function gotoQuran(n, from, to, autoplay) {
   document.querySelector('#tabs [data-tab=quran]').click();
@@ -239,19 +282,19 @@ document.addEventListener('click', e => {
   if (t.closest('#rNext') && cur) return openSurah(cur.n + 1);
   if (t.closest('#rSave')) return saveAudio();
   if (t.closest('#qSaveText')) return saveAllText();
-  if (t.closest('.r-playall') && cur) { if (pl.n === cur.n) { au.paused ? au.play() : au.pause(); return; } const l = store.get('nz-qlast', null); return player.start(cur.n, 1); }
-  const ap = t.closest('.ay-play'); if (ap && cur) { const a = +ap.dataset.a; return player.start(cur.n, a, a); }
+  if (t.closest('.r-playall') && cur) { if (pl.n === cur.n) return toggle(); return player.start(cur.n, 1); }
+  const ap = t.closest('.ay-play'); if (ap && cur) { const a = +ap.dataset.a; return player.start(cur.n, a); }
   const ar = t.closest('.ayah'); if (ar && cur && !t.closest('button') && pl.n === cur.n) { pl.a = +ar.dataset.a; return play(); }
-  if (t.closest('#qbPlay')) { au.paused ? au.play() : au.pause(); return; }
+  if (t.closest('#qbPlay')) return toggle();
   if (t.closest('#qbNext')) return step(1);
   if (t.closest('#qbPrev')) return step(-1);
   if (t.closest('#qbStop')) return stop(false);
   if (t.closest('#qbTitle') && pl.n) return gotoQuran(pl.n, pl.a);
-  const ps = t.closest('.play-s'); if (ps) return gotoQuran(+ps.dataset.n, +ps.dataset.from, +ps.dataset.to, true);
+  const ps = t.closest('.play-s'); if (ps) return gotoQuran(+ps.dataset.n, +ps.dataset.from, 0, true);
   const sp = t.closest('.sp'); if (sp) return gotoQuran(+sp.dataset.n, 1, 0, true);
   const op = t.closest('[data-open]'); if (op) return gotoQuran(+op.dataset.open);
 });
-$('#qAuto') && ($('#qAuto').checked = store.get('nz-qauto', false));
+$('#qAuto') && $('#qAuto').closest('label').classList.add('hidden');   // always continuous now
 if (store.get('nz-qtext', false) && $('#qSaveText')) $('#qSaveText').textContent = '✅ পুরো কুরআনের টেক্সট অফলাইনে আছে';
 window.NZQ = { openSurah, player, index, closeReader, setReciter, reciter: () => reciter };
 // deep link: #quran/18 or #quran/2:255

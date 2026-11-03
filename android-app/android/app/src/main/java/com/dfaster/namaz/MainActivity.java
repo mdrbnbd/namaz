@@ -9,6 +9,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(AzanPlugin.class);
+        registerPlugin(QuranPlugin.class);
         super.onCreate(savedInstanceState);
         AzanScheduler.scheduleAll(this);   // re-arm saved alarms on every launch
         // Hardware / gesture back: walk the in-app history (tabs, surah reader) first; only leave the app from the first screen.
