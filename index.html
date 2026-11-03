@@ -6,12 +6,16 @@
 <title>নামাজের সময়সূচি ও হাদিস | dfaster</title>
 <meta name="description" content="বাংলাদেশের ৬৪ জেলার আজকের নামাজের সময়সূচি, ওয়াক্তের বিস্তারিত, রাকাত সংখ্যা, সেহরি-ইফতার, নিষিদ্ধ সময় ও সালাত বিষয়ক সহীহ হাদিস।">
 <meta name="theme-color" content="#0f766e">
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json?v=3">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="নামাজ">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=1">
+<link rel="stylesheet" href="styles.css?v=3">
 <script>try{var t=localStorage.getItem('nz-theme');if(!t)t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t}catch(e){}</script>
 </head>
 <body>
@@ -22,6 +26,7 @@
       <div><h1>নামাজের সময়সূচি</h1><p>ওয়াক্ত • রাকাত • হাদিস</p></div>
     </div>
     <div class="top-actions">
+      <button class="install-btn hidden" id="installBtn" title="অ্যাপ ইনস্টল করুন">📲 <span>অ্যাপ ইনস্টল</span></button>
       <button class="icon-btn" id="locBtn" title="আমার লোকেশন">📍</button>
       <button class="icon-btn" id="themeBtn" title="ডার্ক/লাইট মোড">🌙</button>
     </div>
@@ -34,6 +39,10 @@
       <label><input type="radio" name="school" value="0"><span>শাফেয়ী</span></label>
     </div>
     <p class="loc-note" id="locNote"></p>
+    <label class="notify-row" id="notifyRow">
+      <span><b>🔔 ওয়াক্তের রিমাইন্ডার</b><small id="notifyNote">শুধু অ্যাপ/পেজ খোলা থাকলে কাজ করে — বন্ধ করে দিলে নোটিফিকেশন আসবে না।</small></span>
+      <input type="checkbox" id="notifyToggle" role="switch"><i class="sw-ui"></i>
+    </label>
   </section>
 
   <section class="hero" id="today">
@@ -127,8 +136,27 @@
     <p class="powered">Powered by <strong>Robin</strong> · <a href="https://dfaster.com" target="_blank" rel="noopener"><strong>dFaster.com</strong></a></p>
   </footer>
 </div>
+<div class="install-bar hidden" id="installBar" role="dialog" aria-label="অ্যাপ ইনস্টল">
+  <img src="icons/icon-192.png" alt="" width="44" height="44">
+  <div class="ib-text"><b>অ্যাপ হিসেবে ইনস্টল করুন</b><small>হোম স্ক্রিন থেকে এক চাপে খুলুন, অফলাইনেও চলবে</small></div>
+  <button class="ib-go" id="installBarBtn">ইনস্টল</button>
+  <button class="ib-x" id="installBarX" aria-label="বন্ধ করুন">✕</button>
+</div>
+<div class="ios-sheet hidden" id="iosSheet" role="dialog" aria-label="আইফোনে ইনস্টল">
+  <div class="ios-card">
+    <h3>আইফোন/আইপ্যাডে অ্যাপ ইনস্টল</h3>
+    <ol>
+      <li>Safari-র নিচের <b>শেয়ার</b> বাটনে চাপুন <span class="ios-ic">⬆️</span></li>
+      <li>নিচে স্ক্রল করে <b>“Add to Home Screen”</b> (হোম স্ক্রিনে যোগ করুন) বেছে নিন <span class="ios-ic">➕</span></li>
+      <li>উপরে ডানদিকে <b>Add</b> চাপুন — হোম স্ক্রিনে 🕌 আইকন চলে আসবে।</li>
+    </ol>
+    <p class="hint">Chrome বা অন্য ব্রাউজারে থাকলে আগে লিংকটি Safari-তে খুলুন।</p>
+    <button class="btn" id="iosClose">বুঝেছি</button>
+  </div>
+</div>
 <div class="toast hidden" id="toast"></div>
-<script src="districts.js?v=1"></script>
-<script src="app.js?v=1"></script>
+<script src="districts.js?v=3"></script>
+<script src="app.js?v=3"></script>
+<script src="install.js?v=3"></script>
 </body>
 </html>

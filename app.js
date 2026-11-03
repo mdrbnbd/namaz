@@ -425,6 +425,7 @@ setThemeIcon();
 fillDistricts();
 load().then(() => renderHod());
 setInterval(tick, 1000);
+window.NZ = { get today() { return today; }, plain: t => plain(t), toast };
 const h = location.hash.slice(1); if (['hadith', 'month', 'waqt'].includes(h)) document.querySelector(`#tabs [data-tab=${h}]`).click();
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
