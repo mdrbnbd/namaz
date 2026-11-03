@@ -24,7 +24,7 @@ import java.io.File;
 
 /**
  * Foreground service that plays the full azan once on the ALARM stream at maximum volume.
- * Source: the user's own file (files/azan_custom_main|fajr) if chosen, else res/raw/azan(.ogg) / azan_fajr(.ogg).
+ * Source: the user's own file (files/azan_custom_main) if chosen, else res/raw/azan(.ogg) — one azan for all five waqts.
  * v1.1.1: plays even when the phone is on silent/vibrate (it is an alarm) unless the user turned "respect silent" on;
  * never aborts on audio-focus denial; every failure is logged and stored in prefs ("last") for the in-app diagnostics.
  */
@@ -52,7 +52,7 @@ public class AzanService extends Service {
         nm.createNotificationChannel(c);
     }
 
-    static File customFile(Context ctx, String which) { return new File(ctx.getFilesDir(), "azan_custom_" + ("fajr".equals(which) ? "fajr" : "main")); }
+    static File customFile(Context ctx, String which) { return new File(ctx.getFilesDir(), "azan_custom_main"); }
 
     static void status(Context ctx, String s) {
         Log.i(TAG, s);
@@ -90,7 +90,7 @@ public class AzanService extends Service {
         } catch (Exception e) {
             status(this, "startForeground failed: " + e);
         }
-        which = intent != null && "fajr".equals(intent.getStringExtra("sound")) ? "fajr" : "main";
+        which = "main"; // same azan for every waqt (Fajr included)
         triedFallback = false;
         play(test);
         return START_NOT_STICKY;
@@ -130,7 +130,7 @@ public class AzanService extends Service {
         File custom = customFile(this, which);
         if (custom.exists() && custom.length() > 0 && start(aa, custom, 0)) return;
         triedFallback = true;
-        if (!start(aa, null, "fajr".equals(which) ? R.raw.azan_fajr : R.raw.azan)) finishKeepNotification();
+        if (!start(aa, null, R.raw.azan)) finishKeepNotification();
     }
 
     /** prepares + starts a MediaPlayer from a file or a raw resource; true on success */
@@ -148,7 +148,7 @@ public class AzanService extends Service {
             mp.setOnCompletionListener(m -> { status(this, "played ok (" + which + (f != null ? ", custom" : "") + ")"); finishKeepNotification(); });
             mp.setOnErrorListener((m, w, e) -> {
                 status(this, "player error " + w + "/" + e + (f != null ? " (custom file)" : ""));
-                if (f != null && !triedFallback) { triedFallback = true; stopPlayerOnly(); if (start(attrs(), null, "fajr".equals(which) ? R.raw.azan_fajr : R.raw.azan)) return true; }
+                if (f != null && !triedFallback) { triedFallback = true; stopPlayerOnly(); if (start(attrs(), null, R.raw.azan)) return true; }
                 finishKeepNotification(); return true;
             });
             mp.prepare();

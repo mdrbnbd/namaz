@@ -38,7 +38,7 @@ async function schedule() {
     const place = window.NZ.place.name || '';
     const items = list.filter(x => on[x.k]).map(x => {
       const w = W.find(a => a[0] === x.k);
-      return {id: Math.floor(x.ts / 60000) % 2000000000, at: x.ts, title: `${w[2]} আযান`, body: `${w[2]} ওয়াক্ত শুরু — ${place} ${hm(x.ts)}`, sound: x.k === 'Fajr' ? 'fajr' : 'azan'};
+      return {id: Math.floor(x.ts / 60000) % 2000000000, at: x.ts, title: `${w[2]} আযান`, body: `${w[2]} ওয়াক্ত শুরু — ${place} ${hm(x.ts)}`, sound: 'azan'};
     });
     const r = await Azan.schedule({items});
     for (const [k] of W) {
@@ -68,7 +68,7 @@ async function diag() {
     row(d.ringer === 'normal' || !d.respectSilent, d.ringer === 'normal' ? 'ফোন সাধারণ (রিং) মোডে' : `ফোন ${d.ringer === 'vibrate' ? 'ভাইব্রেট' : 'সাইলেন্ট'} মোডে`, d.ringer === 'normal' ? '' : (d.respectSilent ? 'নিচের সেটিং চালু থাকায় এখন আযান বাজবে না' : 'তবু আযান বাজবে (অ্যালার্মের মতো)'), '<button class="chip" data-az="sound">সাউন্ড সেটিং</button>') +
     (d.dnd ? row(true, '“বিরক্ত করবেন না” (DND) চালু', 'অ্যালার্ম অনুমোদিত থাকলে আযান বাজবে — DND সেটিংয়ে “Alarms” চালু রাখুন', '') : '') +
     row(d.armed > 0, `${bn(d.armed)}টি আযান সেট আছে`, '', '');
-  $('#azanCustom').innerHTML = [['main', 'মূল আযান (যোহর, আসর, মাগরিব, এশা)', d.customMain], ['fajr', 'ফজরের আযান', d.customFajr]].map(([w, l, c]) =>
+  $('#azanCustom').innerHTML = [['main', 'আযান (সব ওয়াক্ত, ফজরসহ)', d.customMain]].map(([w, l, c]) =>
     `<div class="az-row"><span><b>${l}</b><small>${c ? '🎵 ' + esc(c) : 'অ্যাপের নিজস্ব আযান'}</small></span><span class="chips"><button class="chip" data-pick="${w}">ফাইল বাছুন</button><button class="chip" data-prev="${w}">▶</button>${c ? `<button class="chip" data-reset="${w}">ডিফল্ট</button>` : ''}</span></div>`).join('');
   $('#azRespect').checked = !!d.respectSilent;
   $('#azLast').textContent = d.last ? `শেষ অবস্থা: ${d.last} (${new Date(d.lastAt).toLocaleString('bn-BD')})` : '';
@@ -86,7 +86,6 @@ document.addEventListener('change', e => {
 document.addEventListener('click', e => {
   const t = e.target;
   if (t.closest('#azanTest')) Azan.test({sound: 'azan'}).then(() => setTimeout(diag, 1500)).catch(err => toast('আযান চালানো যায়নি: ' + (err && err.message || err)));
-  if (t.closest('#azanTestF')) Azan.test({sound: 'fajr'}).then(() => setTimeout(diag, 1500)).catch(err => toast('আযান চালানো যায়নি: ' + (err && err.message || err)));
   if (t.closest('#azanStop')) Azan.stop().catch(() => {});
   if (t.closest('#azanTest1m')) Azan.testIn({seconds: 60}).then(r => toast(`১ মিনিট পরে আযান বাজবে${r && r.exact === false ? ' (অনুমতি না থাকায় একটু দেরি হতে পারে)' : ''} — এখন অ্যাপ বন্ধ করে ফোন লক করে দেখুন`)).catch(err => toast('সেট করা যায়নি: ' + (err && err.message || err)));
   const az = t.closest('[data-az]');
@@ -98,7 +97,7 @@ document.addEventListener('click', e => {
   const pk = t.closest('[data-pick]');
   if (pk) Azan.pickAzan({which: pk.dataset.pick}).then(r => { toast(`✅ নতুন আযান রাখা হয়েছে: ${r.name}`); diag(); }).catch(err => { const m = err && err.message || String(err); if (!/cancel/i.test(m)) toast(m); });
   const pv = t.closest('[data-prev]');
-  if (pv) Azan.test({sound: pv.dataset.prev === 'fajr' ? 'fajr' : 'azan'}).catch(err => toast('আযান চালানো যায়নি: ' + (err && err.message || err)));
+  if (pv) Azan.test({sound: 'azan'}).catch(err => toast('আযান চালানো যায়নি: ' + (err && err.message || err)));
   const rs = t.closest('[data-reset]');
   if (rs) Azan.resetAzan({which: rs.dataset.reset}).then(() => { toast('অ্যাপের নিজস্ব আযান ফিরিয়ে আনা হয়েছে'); diag(); }).catch(() => {});
   if (e.target.closest('#azExact')) Azan.openExactAlarmSettings().catch(() => {});

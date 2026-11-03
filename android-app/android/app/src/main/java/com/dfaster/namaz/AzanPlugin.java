@@ -61,7 +61,7 @@ public class AzanPlugin extends Plugin {
     @PermissionCallback
     private void permCb(PluginCall call) { checkPermissions(call); }
 
-    /** items: [{id, at (epoch ms), title, body, sound ("fajr"|"azan")}] — replaces the whole schedule */
+    /** items: [{id, at (epoch ms), title, body, sound ("azan")}] — replaces the whole schedule */
     @PluginMethod
     public void schedule(PluginCall call) {
         JSArray items = call.getArray("items", new JSArray());
@@ -137,7 +137,6 @@ public class AzanPlugin extends Plugin {
         r.put("lastAt", p.getLong("lastAt", 0));
         try { r.put("armed", new JSONArray(p.getString("armed", "[]")).length()); } catch (Exception e) { r.put("armed", 0); }
         r.put("customMain", customInfo(ctx, "main"));
-        r.put("customFajr", customInfo(ctx, "fajr"));
         r.put("sdk", Build.VERSION.SDK_INT);
         r.put("maker", Build.MANUFACTURER);
         call.resolve(r);
@@ -212,7 +211,7 @@ public class AzanPlugin extends Plugin {
         if (call == null) return;
         if (result.getResultCode() != Activity.RESULT_OK || result.getData() == null || result.getData().getData() == null) { call.reject("cancelled"); return; }
         Uri uri = result.getData().getData();
-        String which = "fajr".equals(call.getString("which")) ? "fajr" : "main";
+        String which = "main";
         Context ctx = getContext();
         String name = "নিজের ফাইল";
         try (Cursor c = ctx.getContentResolver().query(uri, new String[]{OpenableColumns.DISPLAY_NAME}, null, null, null)) {
@@ -239,7 +238,7 @@ public class AzanPlugin extends Plugin {
 
     @PluginMethod
     public void resetAzan(PluginCall call) {
-        String which = "fajr".equals(call.getString("which")) ? "fajr" : "main";
+        String which = "main";
         AzanService.customFile(getContext(), which).delete();
         getContext().getSharedPreferences(AzanScheduler.PREFS, Context.MODE_PRIVATE).edit().remove("customName_" + which).apply();
         call.resolve();
