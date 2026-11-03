@@ -468,5 +468,8 @@ window.NZ = { get today() { return today; }, plain: t => plain(t), toast, showTa
   get place() { return {lat: loc.lat, lng: loc.lng, name: loc.name, school}; } };
 if (!history.state) history.replaceState({d: 0}, '', location.href);
 { const h = location.hash.slice(1).split('/')[0]; if (TABS.includes(h) && h !== 'waqt') showTab(h, {push: false}); else syncBack(); }
-if ('serviceWorker' in navigator && location.protocol === 'https:' && !(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform())) navigator.serviceWorker.register('sw.js').catch(() => {});
+// No browser app (PWA) any more — only the Android APK. Remove any service worker / app-shell cache left by an earlier install.
+// Downloaded Quran audio ('namaz-quran-audio', used directly by offline.js) is kept.
+if ('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations) navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister())).catch(() => {});
+if ('caches' in window) caches.keys().then(ks => ks.filter(k => /^namaz-v\d+$/.test(k)).forEach(k => caches.delete(k))).catch(() => {});
 })();

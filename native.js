@@ -14,7 +14,7 @@ const set = v => localStorage.setItem('nz-azan', JSON.stringify(v));
 const hm = ts => { const d = new Date(ts); let h = d.getHours(), m = d.getMinutes(); const h12 = h % 12 || 12; return `${bn(h12)}:${bn(String(m).padStart(2, '0'))}`; };
 
 function ui() {
-  ['#apkLink', '#notifyRow', '#installBtn', '#installBar'].forEach(s => { const e = $(s); if (e) e.classList.add('hidden'); });
+  ['#apkLink', '#notifyRow', '#apkBtn', '#apkBar'].forEach(s => { const e = $(s); if (e) e.classList.add('hidden'); });
   $('#azanSet').classList.remove('hidden');
   const on = get();
   $('#azanToggles').innerHTML = W.map(([k, n]) => `<label class="az-row"><span><b>${n}</b><small id="azn-${k}">—</small></span><span class="notify-row" style="border:0;padding:0;margin:0"><input type="checkbox" data-k="${k}" role="switch" ${on[k] ? 'checked' : ''}><i class="sw-ui"></i></span></label>`).join('');
