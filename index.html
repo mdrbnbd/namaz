@@ -6,7 +6,7 @@
 <title>নামাজের সময়সূচি ও হাদিস | dfaster</title>
 <meta name="description" content="বাংলাদেশের ৬৪ জেলার আজকের নামাজের সময়সূচি, ওয়াক্তের বিস্তারিত, রাকাত সংখ্যা, সেহরি-ইফতার, নিষিদ্ধ সময় ও সালাত বিষয়ক সহীহ হাদিস।">
 <meta name="theme-color" content="#0f766e">
-<link rel="manifest" href="manifest.json?v=3">
+<link rel="manifest" href="manifest.json?v=4">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="নামাজ">
@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=3">
+<link rel="stylesheet" href="styles.css?v=4">
 <script>try{var t=localStorage.getItem('nz-theme');if(!t)t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t}catch(e){}</script>
 </head>
 <body>
@@ -26,7 +26,7 @@
       <div><h1>নামাজের সময়সূচি</h1><p>ওয়াক্ত • রাকাত • হাদিস</p></div>
     </div>
     <div class="top-actions">
-      <button class="install-btn hidden" id="installBtn" title="অ্যাপ ইনস্টল করুন">📲 <span>অ্যাপ ইনস্টল</span></button>
+      <button class="install-btn hidden" id="installBtn" title="অ্যাপ ইনস্টল করুন">📲 <span>ইনস্টল</span></button>
       <button class="icon-btn" id="locBtn" title="আমার লোকেশন">📍</button>
       <button class="icon-btn" id="themeBtn" title="ডার্ক/লাইট মোড">🌙</button>
     </div>
@@ -43,6 +43,13 @@
       <span><b>🔔 ওয়াক্তের রিমাইন্ডার</b><small id="notifyNote">শুধু অ্যাপ/পেজ খোলা থাকলে কাজ করে — বন্ধ করে দিলে নোটিফিকেশন আসবে না।</small></span>
       <input type="checkbox" id="notifyToggle" role="switch"><i class="sw-ui"></i>
     </label>
+    <a class="apk-link" id="apkLink" href="https://github.com/mdrbnbd/namaz/releases/latest/download/namaz.apk" rel="noopener">🤖 <span><b>Android অ্যাপ ডাউনলোড</b><small>অ্যাপ বন্ধ বা ফোন লক থাকলেও প্রতি ওয়াক্তে আযান বাজবে</small></span></a>
+    <div class="azan-set hidden" id="azanSet">
+      <div class="card-h"><h2>🔊 আযান (অ্যাপ বন্ধ থাকলেও বাজবে)</h2></div>
+      <div id="azanToggles"></div>
+      <p class="hint" id="azanNote"></p>
+      <button class="btn ghost" id="azanTest">▶ আযান শুনে দেখুন</button>
+    </div>
   </section>
 
   <section class="hero" id="today">
@@ -95,6 +102,8 @@
   <nav class="tabs" id="tabs">
     <button data-tab="waqt" class="on">ওয়াক্ত ও রাকাত</button>
     <button data-tab="hadith">হাদিস</button>
+    <button data-tab="quran">আল-কুরআন</button>
+    <button data-tab="guide">কোন ওয়াক্তে কোন সূরা</button>
     <button data-tab="month">মাসিক সময়সূচি</button>
   </nav>
 
@@ -115,6 +124,53 @@
       </div>
       <div id="hList"></div>
       <button class="btn ghost hidden" id="hMore">আরো দেখুন</button>
+    </div>
+  </section>
+
+  <section class="tab hidden" id="tab-quran">
+    <div id="qBrowse">
+      <div class="card">
+        <div class="card-h"><h2>আল-কুরআন · ১১৪ সূরা</h2><span class="muted small">আরবি + বাংলা অর্থ</span></div>
+        <div class="resume hidden" id="qResume"></div>
+        <input class="search" id="qSearch" type="search" placeholder="সূরা খুঁজুন: নাম, অর্থ, আরবি বা নম্বর (যেমন ইয়াসীন, ৩৬)">
+        <div class="q-opts">
+          <label class="field">ক্বারী (তিলাওয়াত)<select id="qReciter"></select></label>
+          <label class="q-auto"><input type="checkbox" id="qAuto"> সূরা শেষে পরের সূরা চালু</label>
+        </div>
+        <div id="qList" class="s-list"></div>
+        <button class="btn ghost" id="qSaveText">📥 পুরো কুরআনের টেক্সট অফলাইনে রাখুন (~৪ MB)</button>
+        <p class="hint">আরবি পাঠ: উসমানী রসমে (Tanzil / api.alquran.cloud, quran-uthmani)। বাংলা অনুবাদ: <b>মাওলানা মুহিউদ্দীন খান</b> (api.alquran.cloud, bn.bengali)। অডিও: everyayah.com থেকে আয়াতভিত্তিক স্ট্রিম হয় — শোনার জন্য ইন্টারনেট লাগবে, চাইলে প্রতিটি সূরার অডিও অফলাইনে রাখা যায়।</p>
+      </div>
+    </div>
+    <div id="qReader" class="hidden">
+      <div class="card reader-h">
+        <div class="r-nav"><button class="chip" id="rBack">‹ সূরা তালিকা</button><span><button class="chip" id="rPrev">‹ আগের</button> <button class="chip" id="rNext">পরের ›</button></span></div>
+        <h2 id="rTitle"></h2>
+        <p class="muted small" id="rMeta"></p>
+        <div class="r-actions"><button class="btn r-playall">▶ পুরো সূরা শুনুন</button><button class="btn ghost" id="rSave">⬇️ অডিও অফলাইনে রাখুন</button></div>
+        <p class="hint">যেকোনো আয়াতের ▶ চাপলে শুধু সেই আয়াত শুনবেন; পুরো সূরা চলার সময় কোনো আয়াতে চাপলে সেখান থেকে চলবে।</p>
+      </div>
+      <p class="bism" id="rBism" lang="ar" dir="rtl">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</p>
+      <div id="rAyahs"></div>
+      <div class="card r-foot"><button class="chip" id="rBack2" onclick="NZQ.closeReader()">‹ সূরা তালিকা</button><button class="chip" onclick="document.getElementById('rNext').click()">পরের সূরা ›</button></div>
+    </div>
+  </section>
+
+  <section class="tab hidden" id="tab-guide">
+    <div class="card must">
+      <h2>প্রথমে জেনে নিন</h2>
+      <p>প্রতিটি সালাতের <b>প্রতি রাকাতে সূরা আল-ফাতিহা পড়া আবশ্যক</b>। ফাতিহার পর <b>নির্দিষ্ট কোনো সূরা বাধ্যতামূলক নয়</b> — কুরআনের যেকোনো সূরা বা আয়াত পড়া যায়। নিচের তালিকা হলো নবী ﷺ যেসব সালাতে যে সূরা পড়েছেন বলে সহীহ হাদিসে বর্ণিত — এগুলো সুন্নাত/উত্তম, বাধ্যতামূলক নয়।</p>
+      <p class="hint">মাসআলা: হানাফী মাযহাবে ফরজের প্রথম দুই রাকাতে এবং সুন্নাত, নফল ও বিতরের প্রতি রাকাতে ফাতিহার পর অন্তত ছোট তিন আয়াত (বা সমপরিমাণ) মেলানো ওয়াজিব। বিস্তারিত জানতে নির্ভরযোগ্য আলেমের পরামর্শ নিন।</p>
+      <div id="gMustRef"></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><h2>কোন ওয়াক্তে কোন সূরা — হাদিসের আলোকে</h2></div>
+      <div id="gList"><p class="empty">লোড হচ্ছে…</p></div>
+      <p class="hint">শুধু সেই আমলগুলো রাখা হয়েছে যেগুলোর হাদিস মূল উৎস (fawazahmed0/hadith-api) থেকে নম্বরসহ যাচাই করা গেছে; প্রতিটির নিচে হাদিসের মূল পাঠ ও sunnah.com লিংক আছে। যাচাই করা যায়নি বা দুর্বল (যঈফ) — এমন বর্ণনা বাদ দেওয়া হয়েছে।</p>
+    </div>
+    <div class="card">
+      <div class="card-h"><h2>ছোট সূরা (১০৫–১১৪)</h2><span class="muted small">নামাজে সবচেয়ে বেশি পড়া হয়</span></div>
+      <div id="gShort"></div>
     </div>
   </section>
 
@@ -154,9 +210,15 @@
     <button class="btn" id="iosClose">বুঝেছি</button>
   </div>
 </div>
+<div class="qbar hidden" id="qBar" role="region" aria-label="তিলাওয়াত প্লেয়ার">
+  <button class="qb-t" id="qbTitle"><b id="qbName"></b><small id="qbSub"></small></button>
+  <div class="qb-c"><button id="qbPrev" aria-label="আগের আয়াত">⏮</button><button id="qbPlay" aria-label="চালু/বিরতি">⏸</button><button id="qbNext" aria-label="পরের আয়াত">⏭</button><button id="qbStop" aria-label="বন্ধ">✕</button></div>
+</div>
 <div class="toast hidden" id="toast"></div>
-<script src="districts.js?v=3"></script>
-<script src="app.js?v=3"></script>
-<script src="install.js?v=3"></script>
+<script src="districts.js?v=4"></script>
+<script src="quran.js?v=4"></script>
+<script src="app.js?v=4"></script>
+<script src="install.js?v=4"></script>
+<script src="native.js?v=4"></script>
 </body>
 </html>

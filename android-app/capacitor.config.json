@@ -1,0 +1,6 @@
+{
+  "appId": "com.dfaster.namaz",
+  "appName": "নামাজের সময় ও হাদিস",
+  "webDir": "www",
+  "android": { "backgroundColor": "#0f766e" }
+}

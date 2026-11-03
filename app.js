@@ -122,6 +122,7 @@ async function load() {
     const [ey, e0, e1] = await Promise.all([dayEntry(y0), dayEntry(now), dayEntry(y1)]);
     today = {ymd: now, prev: sched(ey, y0), cur: sched(e0, now), next: sched(e1, y1)};
     renderToday();
+    document.dispatchEvent(new CustomEvent('nz-loaded'));
     setStatus(offline ? '⚠️ অফলাইন — সর্বশেষ সংরক্ষিত সময় দেখানো হচ্ছে' : '');
   } catch (e) {
     setStatus('❌ সময় লোড করা যায়নি। ইন্টারনেট সংযোগ দেখে আবার চেষ্টা করুন।');
@@ -399,6 +400,7 @@ $('#tabs').addEventListener('click', e => {
   if (b.dataset.tab === 'hadith') initHadithBrowser().catch(() => $('#hList').innerHTML = '<p class="empty">হাদিস লোড করা যায়নি</p>');
   if (b.dataset.tab === 'month') renderMonth();
   history.replaceState(null, '', '#' + b.dataset.tab);
+  document.dispatchEvent(new CustomEvent('nz-tab', {detail: b.dataset.tab}));
 });
 $('#mPrev').addEventListener('click', () => { mOffset--; renderMonth(); });
 $('#mNext').addEventListener('click', () => { mOffset++; renderMonth(); });
@@ -425,7 +427,18 @@ setThemeIcon();
 fillDistricts();
 load().then(() => renderHod());
 setInterval(tick, 1000);
-window.NZ = { get today() { return today; }, plain: t => plain(t), toast };
-const h = location.hash.slice(1); if (['hadith', 'month', 'waqt'].includes(h)) document.querySelector(`#tabs [data-tab=${h}]`).click();
-if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+window.NZ = { get today() { return today; }, plain: t => plain(t), toast, 
+  // next n days of the 5 waqt start times (ms epoch) for the selected district & madhhab
+  async upcoming(n = 7) {
+    const now = tzParts(new Date(), loc.tz), out = [];
+    for (let i = 0; i < n; i++) {
+      const ymd = addDays(now.y, now.m, now.d, i);
+      const s = sched(await dayEntry(ymd), ymd);
+      for (const k of ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha']) out.push({k, ts: +s[k], ymd});
+    }
+    return out.filter(x => x.ts > Date.now());
+  },
+  get place() { return {lat: loc.lat, lng: loc.lng, name: loc.name, school}; } };
+const h = location.hash.slice(1).split('/')[0]; if (['hadith', 'month', 'waqt', 'quran', 'guide'].includes(h)) document.querySelector(`#tabs [data-tab=${h}]`).click();
+if ('serviceWorker' in navigator && location.protocol === 'https:' && !(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform())) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();

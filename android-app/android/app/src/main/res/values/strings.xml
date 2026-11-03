@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">নামাজের সময় ও হাদিস</string>
+    <string name="title_activity_main">নামাজ ও হাদিস</string>
+    <string name="package_name">com.dfaster.namaz</string>
+    <string name="custom_url_scheme">com.dfaster.namaz</string>
+</resources>
