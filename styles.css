@@ -139,3 +139,6 @@ table.month{width:100%;border-collapse:collapse;font-size:.8rem;font-variant-num
   table.month{min-width:0}
 }
 @media (min-width:560px){.month th,.month td{padding:7px 6px;font-size:.88rem}}
+
+.foot .powered{margin-top:14px;font-size:15px;font-weight:500;letter-spacing:.2px}
+.foot .powered a{text-decoration:none}
