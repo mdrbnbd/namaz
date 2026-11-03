@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="bn" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>নামাজের সময়সূচি ও হাদিস | dfaster</title>
+<meta name="description" content="বাংলাদেশের ৬৪ জেলার আজকের নামাজের সময়সূচি, ওয়াক্তের বিস্তারিত, রাকাত সংখ্যা, সেহরি-ইফতার, নিষিদ্ধ সময় ও সালাত বিষয়ক সহীহ হাদিস।">
+<meta name="theme-color" content="#0f766e">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=1">
+<script>try{var t=localStorage.getItem('nz-theme');if(!t)t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">🕌</div>
+      <div><h1>নামাজের সময়সূচি</h1><p>ওয়াক্ত • রাকাত • হাদিস</p></div>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" id="locBtn" title="আমার লোকেশন">📍</button>
+      <button class="icon-btn" id="themeBtn" title="ডার্ক/লাইট মোড">🌙</button>
+    </div>
+  </header>
+
+  <section class="card place">
+    <label class="field"><span>জেলা</span><select id="district"></select></label>
+    <div class="seg" role="radiogroup" aria-label="আসরের মাযহাব">
+      <label><input type="radio" name="school" value="1" checked><span>হানাফী</span></label>
+      <label><input type="radio" name="school" value="0"><span>শাফেয়ী</span></label>
+    </div>
+    <p class="loc-note" id="locNote"></p>
+  </section>
+
+  <section class="hero" id="today">
+    <div class="dates">
+      <div id="dGreg">—</div>
+      <div id="dHijri">—</div>
+      <div id="dBangla">—</div>
+    </div>
+    <div class="now">
+      <div class="now-label">এখন চলছে</div>
+      <div class="now-name" id="nowName">—</div>
+      <div class="now-range" id="nowRange"></div>
+    </div>
+    <div class="next">
+      <div><span id="nextLabel">পরবর্তী ওয়াক্ত</span> <b id="nextName">—</b> <span id="nextAt"></span></div>
+      <div class="countdown" id="countdown">--:--:--</div>
+      <div class="bar"><i id="progress"></i></div>
+    </div>
+    <div class="status" id="status"></div>
+  </section>
+
+  <section class="card">
+    <div class="card-h"><h2>আজকের ওয়াক্ত</h2><span class="muted small" id="methodNote">করাচি পদ্ধতি</span></div>
+    <ul class="times" id="times"></ul>
+  </section>
+
+  <section class="grid2">
+    <div class="card mini ramadan">
+      <h3>🌙 সেহরি শেষ</h3><div class="big" id="sehri">—</div>
+      <h3>🌇 ইফতার</h3><div class="big" id="iftar">—</div>
+      <p class="hint">সতর্কতার জন্য সেহরি ২–৩ মিনিট আগে শেষ করুন।</p>
+    </div>
+    <div class="card mini">
+      <h3>✨ নফল সালাতের সময়</h3>
+      <ul class="kv" id="nafl"></ul>
+    </div>
+  </section>
+
+  <section class="card warn">
+    <div class="card-h"><h2>⛔ নিষিদ্ধ (মাকরূহ) সময়</h2></div>
+    <ul class="kv" id="makruh"></ul>
+    <p class="hint">এই তিন সময়ে যেকোনো সালাত (ফরজ, নফল, জানাযা, তিলাওয়াতের সিজদা) নিষেধ। তবে কেউ সেদিনের আসর আদায় না করে থাকলে সূর্যাস্তের আগে তা পড়ে নেবে (হানাফী মত)। যাওয়ালের সময় আনুমানিক।</p>
+  </section>
+
+  <section class="card hod">
+    <div class="card-h"><h2>📖 আজকের হাদিস</h2><button class="chip" id="hodNext">আরেকটি ↻</button></div>
+    <div id="hod"><div class="skeleton"></div></div>
+  </section>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="waqt" class="on">ওয়াক্ত ও রাকাত</button>
+    <button data-tab="hadith">হাদিস</button>
+    <button data-tab="month">মাসিক সময়সূচি</button>
+  </nav>
+
+  <section class="tab" id="tab-waqt">
+    <div id="waqtList"></div>
+    <p class="hint">রাকাতের হিসাব হানাফী মাযহাবে প্রচলিত নিয়ম অনুযায়ী। সুন্নাতে মুয়াক্কাদা = গুরুত্বপূর্ণ সুন্নাত, গায়রে মুয়াক্কাদা = সাধারণ সুন্নাত। মাসআলার বিস্তারিত জানতে নির্ভরযোগ্য আলেমের পরামর্শ নিন।</p>
+  </section>
+
+  <section class="tab hidden" id="tab-hadith">
+    <div class="card">
+      <div class="card-h"><h2>সালাত বিষয়ক হাদিস</h2><span class="muted small" id="hCount"></span></div>
+      <input class="search" id="hSearch" type="search" placeholder="খুঁজুন: যেমন জামাআত, ফজর, সিজদা, বিতর…">
+      <div class="chips" id="hCats"></div>
+      <div class="seg small" id="hCol">
+        <label><input type="radio" name="col" value="" checked><span>সব</span></label>
+        <label><input type="radio" name="col" value="bukhari"><span>বুখারী</span></label>
+        <label><input type="radio" name="col" value="muslim"><span>মুসলিম</span></label>
+      </div>
+      <div id="hList"></div>
+      <button class="btn ghost hidden" id="hMore">আরো দেখুন</button>
+    </div>
+  </section>
+
+  <section class="tab hidden" id="tab-month">
+    <div class="card">
+      <div class="card-h">
+        <button class="chip" id="mPrev">‹ আগের</button>
+        <h2 id="mTitle">—</h2>
+        <button class="chip" id="mNext">পরের ›</button>
+      </div>
+      <div class="table-wrap"><table class="month"><thead><tr><th>তারিখ</th><th>ফজর<br><small>সেহরি শেষ</small></th><th>সূর্যোদয়</th><th>যোহর</th><th>আসর</th><th>মাগরিব<br><small>ইফতার</small></th><th>এশা</th></tr></thead><tbody id="mBody"></tbody></table></div>
+      <button class="btn ghost" id="mPrint">🖨️ প্রিন্ট / PDF</button>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p>নামাজের সময়: <a href="https://aladhan.com/prayer-times-api" target="_blank" rel="noopener">Aladhan API</a> (University of Islamic Sciences, Karachi; ফজর ও এশা ১৮°)। হাদিস: <a href="https://github.com/fawazahmed0/hadith-api" target="_blank" rel="noopener">fawazahmed0/hadith-api</a> — সহীহ বুখারী ও সহীহ মুসলিমের বাংলা ও আরবি সংস্করণ, হুবহু।</p>
+    <p>স্থানীয় মসজিদের জামাআতের সময়ের সাথে ১–২ মিনিট পার্থক্য হতে পারে। হিজরি তারিখ চাঁদ দেখার উপর নির্ভরশীল।</p>
+    <p class="muted">© <a href="https://dfaster.com" target="_blank" rel="noopener">dfaster.com</a></p>
+  </footer>
+</div>
+<div class="toast hidden" id="toast"></div>
+<script src="districts.js?v=1"></script>
+<script src="app.js?v=1"></script>
+</body>
+</html>

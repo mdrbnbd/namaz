@@ -1,0 +1,17 @@
+{
+  "name": "নামাজের সময়সূচি ও হাদিস",
+  "short_name": "নামাজ",
+  "description": "বাংলাদেশের নামাজের সময়সূচি, ওয়াক্ত, রাকাত ও সালাত বিষয়ক হাদিস",
+  "lang": "bn",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#071311",
+  "theme_color": "#0f766e",
+  "icons": [
+    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
+    {"src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml"}
+  ]
+}
