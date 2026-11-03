@@ -31,6 +31,7 @@ public final class AzanScheduler {
             i.putExtra("at", it.optLong("at"));
             i.putExtra("title", it.optString("title", "আযান"));
             i.putExtra("body", it.optString("body", ""));
+            i.putExtra("sound", it.optString("sound", "azan"));   // "fajr" -> res/raw/azan_fajr, else res/raw/azan
         }
         return PendingIntent.getBroadcast(ctx, id, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }

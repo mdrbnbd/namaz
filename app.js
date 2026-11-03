@@ -393,14 +393,41 @@ $('#dHijri').addEventListener('click', () => {
   if (today) $('#dHijri').textContent = hijriDate(today.ymd.y, today.ymd.m, today.ymd.d);
   toast(`হিজরি সমন্বয়: ${hijriAdj > 0 ? '+' : ''}${bn(hijriAdj)} দিন`);
 });
-$('#tabs').addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b) return;
-  document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b));
-  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('hidden', t.id !== 'tab-' + b.dataset.tab));
-  if (b.dataset.tab === 'hadith') initHadithBrowser().catch(() => $('#hList').innerHTML = '<p class="empty">হাদিস লোড করা যায়নি</p>');
-  if (b.dataset.tab === 'month') renderMonth();
-  history.replaceState(null, '', '#' + b.dataset.tab);
-  document.dispatchEvent(new CustomEvent('nz-tab', {detail: b.dataset.tab}));
+// ---------- tabs + history (top tabs, bottom nav, hardware/gesture back) ----------
+const TABS = ['waqt', 'hadith', 'quran', 'guide', 'month', 'dl'];
+let curTab = 'waqt';
+function showTab(t, {push = true} = {}) {
+  if (!TABS.includes(t)) t = 'waqt';
+  const changed = t !== curTab; curTab = t;
+  document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === t));
+  document.querySelectorAll('#bnav [data-go]').forEach(x => { const on = x.dataset.go === t || (x.dataset.go === 'waqt' && t === 'month'); x.classList.toggle('on', on); on ? x.setAttribute('aria-current', 'page') : x.removeAttribute('aria-current'); });
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('hidden', x.id !== 'tab-' + t));
+  if (t === 'hadith') initHadithBrowser().catch(() => $('#hList').innerHTML = '<p class="empty">হাদিস লোড করা যায়নি</p>');
+  if (t === 'month') renderMonth();
+  const tabHash = location.hash.slice(1).split('/')[0];
+  if (push && changed) history.pushState({d: depth() + 1}, '', '#' + t);
+  else if (push && tabHash !== t) history.replaceState({d: depth()}, '', '#' + t);
+  document.dispatchEvent(new CustomEvent('nz-tab', {detail: t}));
+  syncBack();
+}
+const depth = () => (history.state && history.state.d) || 0;
+function syncBack() { const b = $('#bnBack'); if (b) b.disabled = depth() === 0 && curTab === 'waqt'; }
+function goBack() {
+  if (depth() > 0) history.back();
+  else if (curTab !== 'waqt') showTab('waqt', {push: false}), history.replaceState({d: 0}, '', location.pathname + location.search);
+}
+addEventListener('popstate', () => { showTab(location.hash.slice(1).split('/')[0] || 'waqt', {push: false}); });
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); });
+document.addEventListener('click', e => {
+  const g = e.target.closest('#bnav [data-go]');
+  if (g) {
+    const t = g.dataset.go, tabsTop = $('#tabs').offsetTop;
+    if (t === curTab) { if (t === 'quran' && !$('#qReader').classList.contains('hidden') && window.NZQ) NZQ.closeReader(); scrollTo({top: t === 'waqt' ? 0 : tabsTop, behavior: 'smooth'}); return; }
+    showTab(t);
+    if (t === 'waqt') scrollTo({top: 0}); else if (scrollY > tabsTop) scrollTo({top: tabsTop});
+    return;
+  }
+  if (e.target.closest('#bnBack')) goBack();
 });
 $('#mPrev').addEventListener('click', () => { mOffset--; renderMonth(); });
 $('#mNext').addEventListener('click', () => { mOffset++; renderMonth(); });
@@ -427,7 +454,7 @@ setThemeIcon();
 fillDistricts();
 load().then(() => renderHod());
 setInterval(tick, 1000);
-window.NZ = { get today() { return today; }, plain: t => plain(t), toast, 
+window.NZ = { get today() { return today; }, plain: t => plain(t), toast, showTab, goBack, depth, syncBack, get tab() { return curTab; },
   // next n days of the 5 waqt start times (ms epoch) for the selected district & madhhab
   async upcoming(n = 7) {
     const now = tzParts(new Date(), loc.tz), out = [];
@@ -439,6 +466,7 @@ window.NZ = { get today() { return today; }, plain: t => plain(t), toast,
     return out.filter(x => x.ts > Date.now());
   },
   get place() { return {lat: loc.lat, lng: loc.lng, name: loc.name, school}; } };
-const h = location.hash.slice(1).split('/')[0]; if (['hadith', 'month', 'waqt', 'quran', 'guide'].includes(h)) document.querySelector(`#tabs [data-tab=${h}]`).click();
+if (!history.state) history.replaceState({d: 0}, '', location.href);
+{ const h = location.hash.slice(1).split('/')[0]; if (TABS.includes(h) && h !== 'waqt') showTab(h, {push: false}); else syncBack(); }
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform())) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();

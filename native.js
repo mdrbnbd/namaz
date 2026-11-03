@@ -29,7 +29,7 @@ async function schedule() {
     const place = window.NZ.place.name || '';
     const items = list.filter(x => on[x.k]).map(x => {
       const w = W.find(a => a[0] === x.k);
-      return {id: Math.floor(x.ts / 60000) % 2000000000, at: x.ts, title: `${w[2]} আযান`, body: `${w[2]} ওয়াক্ত শুরু — ${place} ${hm(x.ts)}`};
+      return {id: Math.floor(x.ts / 60000) % 2000000000, at: x.ts, title: `${w[2]} আযান`, body: `${w[2]} ওয়াক্ত শুরু — ${place} ${hm(x.ts)}`, sound: x.k === 'Fajr' ? 'fajr' : 'azan'};
     });
     const r = await Azan.schedule({items});
     for (const [k] of W) {
@@ -54,7 +54,8 @@ document.addEventListener('change', e => {
   const v = get(); v[k] = e.target.checked; set(v); schedule();
 });
 document.addEventListener('click', e => {
-  if (e.target.closest('#azanTest')) Azan.test().catch(() => {});
+  if (e.target.closest('#azanTest')) Azan.test({sound: 'azan'}).catch(() => {});
+  if (e.target.closest('#azanTestF')) Azan.test({sound: 'fajr'}).catch(() => {});
   if (e.target.closest('#azExact')) Azan.openExactAlarmSettings().catch(() => {});
   if (e.target.closest('#azBatt')) Azan.openBatterySettings().catch(() => {});
 });

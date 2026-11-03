@@ -41,7 +41,7 @@ public class AzanPlugin extends Plugin {
     @PermissionCallback
     private void permCb(PluginCall call) { checkPermissions(call); }
 
-    /** items: [{id, at (epoch ms), title, body}] — replaces the whole schedule */
+    /** items: [{id, at (epoch ms), title, body, sound ("fajr"|"azan")}] — replaces the whole schedule */
     @PluginMethod
     public void schedule(PluginCall call) {
         JSArray items = call.getArray("items", new JSArray());
@@ -56,7 +56,8 @@ public class AzanPlugin extends Plugin {
 
     @PluginMethod
     public void test(PluginCall call) {
-        Intent s = new Intent(getContext(), AzanService.class).putExtra("title", "আযান (পরীক্ষা)").putExtra("body", "আযান ঠিকমতো বাজছে কিনা দেখুন");
+        Intent s = new Intent(getContext(), AzanService.class).putExtra("title", "আযান (পরীক্ষা)").putExtra("body", "আযান ঠিকমতো বাজছে কিনা দেখুন")
+                .putExtra("sound", call.getString("sound", "azan"));
         ContextCompat.startForegroundService(getContext(), s);
         call.resolve();
     }

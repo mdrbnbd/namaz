@@ -7,20 +7,19 @@ const bn = v => String(v).replace(/\d/g, d => BD[d]);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const toast = m => (window.NZ && NZ.toast ? NZ.toast(m) : alert(m));
 const store = { get: (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
-const V = 4;
-const RECITERS = [           // everyayah.com folders (per-ayah MP3, CORS enabled so they can be saved offline)
-  ['ar.alafasy', 'Alafasy_128kbps', 'মিশারি রাশিদ আল-আফাসি'],
-  ['ar.husary', 'Husary_128kbps', 'মাহমুদ খলীল আল-হুসারী'],
-  ['ar.minshawi', 'Minshawy_Murattal_128kbps', 'মুহাম্মাদ সিদ্দীক আল-মিনশাবী'],
-  ['ar.mahermuaiqly', 'MaherAlMuaiqly128kbps', 'মাহের আল-মুআইকিলী'],
-  ['ar.abdurrahmaansudais', 'Abdurrahmaan_As-Sudais_64kbps', 'আবদুর রহমান আস-সুদাইস'],
-  ['ar.abdulbasitmurattal', 'Abdul_Basit_Murattal_64kbps', 'আবদুল বাসিত আবদুস সামাদ (মুরাত্তাল)'],
-];
-const AUDIO_CACHE = 'namaz-quran-audio';
+const V = 5;
+const DL = window.NZDL;                 // offline.js (loaded first): reciters, storage, download queue
+const RECITERS = DL.RECITERS;
 let reciter = store.get('nz-reciter', 'ar.alafasy'); if (!RECITERS.some(r => r[0] === reciter)) reciter = 'ar.alafasy';
 const rc = () => RECITERS.find(r => r[0] === reciter);
-const p3 = x => String(x).padStart(3, '0');
-const audioUrl = (n, a) => `https://everyayah.com/data/${rc()[1]}/${p3(n)}${p3(a)}.mp3`;
+const audioUrl = (n, a) => DL.url(reciter, n, a);
+function setReciter(id) {
+  if (!RECITERS.some(r => r[0] === id) || id === reciter) return;
+  reciter = id; store.set('nz-reciter', reciter);
+  if ($('#qReciter')) $('#qReciter').value = id;
+  updateSaveBtn(); if (IDX && $('#qList').children.length) renderList();
+  if (pl.n) play();
+}
 
 let IDX = null, cur = null;            // cur = {n, g, a:[[ar,bn,sajda]]}
 const surahCache = {};
@@ -40,7 +39,7 @@ function renderList() {
   const q = norm($('#qSearch').value.trim());
   const qd = $('#qSearch').value.trim().replace(/[০-৯]/g, d => BD.indexOf(d));
   const rows = IDX.filter(s => !q || String(s.n) === qd || norm(s.bn).includes(q) || norm(s.ar).includes(q) || norm(s.en).includes(q) || norm(s.m).includes(q));
-  $('#qList').innerHTML = rows.map(s => `<button class="s-row" data-n="${s.n}"><span class="s-no">${bn(s.n)}</span><span class="s-name"><b>${esc(s.bn)}</b><small>${esc(s.m)} · ${s.p} · ${bn(s.c)} আয়াত</small></span><span class="s-ar" lang="ar">${esc(s.ar)}</span></button>`).join('') || '<p class="empty">কোনো সূরা পাওয়া যায়নি</p>';
+  $('#qList').innerHTML = rows.map(s => `<button class="s-row" data-n="${s.n}"><span class="s-no">${bn(s.n)}</span><span class="s-name"><b>${esc(s.bn)}</b><small>${esc(s.m)} · ${s.p} · ${bn(s.c)} আয়াত</small></span>${DL.isSaved(reciter, s.n) ? '<span class="off-b" title="অফলাইনে আছে">অফলাইন</span>' : ''}<span class="s-ar" lang="ar">${esc(s.ar)}</span></button>`).join('') || '<p class="empty">কোনো সূরা পাওয়া যায়নি</p>';
 }
 function renderResume() {
   const l = store.get('nz-qlast', null), el = $('#qResume');
@@ -75,7 +74,8 @@ async function openSurah(n, ayah = 1, {scroll = true} = {}) {
   updateSaveBtn();
   store.set('nz-qlast', {n, a: ayah});
   const h = `#quran/${n}${ayah > 1 ? ':' + ayah : ''}`;
-  if (/^#quran\//.test(location.hash)) history.replaceState({r: 1}, '', h); else history.pushState({r: 1}, '', h);   // Back button closes the reader
+  const d = (history.state && history.state.d) || 0;
+  if (/^#quran\//.test(location.hash)) history.replaceState({r: 1, d}, '', h); else history.pushState({r: 1, d: d + 1}, '', h);   // Back button closes the reader
   if (io) io.disconnect();
   io = new IntersectionObserver(es => { for (const e of es) if (e.isIntersecting && cur && cur.n === n && !player.playing()) store.set('nz-qlast', {n, a: +e.target.dataset.a}); }, {rootMargin: '-40% 0px -55% 0px'});
   document.querySelectorAll('.ayah').forEach(a => io.observe(a));
@@ -84,10 +84,15 @@ async function openSurah(n, ayah = 1, {scroll = true} = {}) {
 }
 function closeReader(fromPop) {
   $('#qReader').classList.add('hidden'); $('#qBrowse').classList.remove('hidden');
-  if (!fromPop) { if (history.state && history.state.r) history.back(); else history.replaceState(null, '', '#quran'); }
+  if (!fromPop) { if (history.state && history.state.r && history.state.d > 0) history.back(); else history.replaceState({d: (history.state && history.state.d) || 0}, '', '#quran'); }
+  if (window.NZ && NZ.syncBack) NZ.syncBack();
   renderResume();
 }
-addEventListener('popstate', () => { if (!/^#quran\//.test(location.hash) && !$('#qReader').classList.contains('hidden')) closeReader(true); });
+addEventListener('popstate', () => {
+  const m = location.hash.match(/^#quran\/(\d+)(?::(\d+))?/), open = !$('#qReader').classList.contains('hidden');
+  if (!m && open) closeReader(true);
+  else if (m && (!open || !cur || cur.n !== +m[1])) openSurah(+m[1], +(m[2] || 1));     // forward / back into a reader entry
+});
 
 // ---------- player ----------
 const au = new Audio(); au.preload = 'auto';
@@ -101,14 +106,15 @@ const player = {
   },
 };
 let blobUrl = null;
-async function srcFor(u) {          // saved-offline audio is played from the Cache API (works in the Android app too)
+async function srcFor(n, a) {        // downloaded audio plays from the phone (Filesystem in the app, Cache API in the browser)
   if (blobUrl) { URL.revokeObjectURL(blobUrl); blobUrl = null; }
-  try { if ('caches' in window) { const r = await (await caches.open(AUDIO_CACHE)).match(u); if (r) return (blobUrl = URL.createObjectURL(await r.blob())); } } catch {}
-  return u;
+  const local = await DL.backend.src(reciter, n, a);
+  if (local) { if (local.startsWith('blob:')) blobUrl = local; return local; }
+  return audioUrl(n, a);
 }
 async function play() {
   const want = pl.n + ':' + pl.a;
-  const src = await srcFor(audioUrl(pl.n, pl.a));
+  const src = await srcFor(pl.n, pl.a);
   if (want !== pl.n + ':' + pl.a) return;
   au.src = src;
   au.play().catch(() => toast('অডিও চালানো যায়নি — ইন্টারনেট সংযোগ দেখুন'));
@@ -152,37 +158,16 @@ if ('mediaSession' in navigator) {
   navigator.mediaSession.setActionHandler('previoustrack', () => step(-1));
 }
 
-// ---------- offline audio ----------
-const savedKey = () => `${reciter}:${cur && cur.n}`;
+// ---------- offline audio (download manager lives in offline.js) ----------
 function updateSaveBtn() {
   const b = $('#rSave'); if (!b || !cur) return;
-  const ok = store.get('nz-qsaved', {})[savedKey()];
-  b.textContent = ok ? '✅ অডিও অফলাইনে সংরক্ষিত' : '⬇️ অডিও অফলাইনে রাখুন';
-  b.dataset.saved = ok ? '1' : '';
+  const st = DL.state(reciter, cur.n);
+  b.textContent = st.saved ? `✅ অফলাইনে আছে (${st.mb(st.bytes)}) · মুছুন` : st.queued ? (st.pct != null ? `⬇️ ডাউনলোড হচ্ছে… ${bn(st.pct)}%` : st.paused ? '⏸ ডাউনলোড বিরতিতে — চালু করুন' : '⏳ ডাউনলোডের অপেক্ষায়') : `⬇️ অডিও অফলাইনে রাখুন (≈ ${st.mb(st.bytes)})`;
+  b.dataset.saved = st.saved ? '1' : '';
 }
-async function saveAudio() {
-  if (!('caches' in window)) return toast('এই ব্রাউজারে অফলাইন সংরক্ষণ সমর্থিত নয়');
-  const s = cur, b = $('#rSave'), key = savedKey();
-  if (b.dataset.saved) {
-    if (!confirm('এই সূরার সংরক্ষিত অডিও মুছে ফেলবেন?')) return;
-    const c = await caches.open(AUDIO_CACHE);
-    await Promise.all(s.a.map((_, i) => c.delete(audioUrl(s.n, i + 1))));
-    const m = store.get('nz-qsaved', {}); delete m[key]; store.set('nz-qsaved', m); updateSaveBtn(); return;
-  }
-  const c = await caches.open(AUDIO_CACHE); let done = 0, fail = 0;
-  b.disabled = true;
-  const urls = s.a.map((_, i) => audioUrl(s.n, i + 1));
-  for (let i = 0; i < urls.length; i += 4) {
-    await Promise.all(urls.slice(i, i + 4).map(async u => {
-      try { if (!(await c.match(u))) { const r = await fetch(u, {mode: 'cors'}); if (!r.ok) throw 0; await c.put(u, r); } done++; } catch { fail++; }
-      b.textContent = `⬇️ ডাউনলোড হচ্ছে… ${bn(done)}/${bn(urls.length)}`;
-    }));
-  }
-  b.disabled = false;
-  if (!fail) { const m = store.get('nz-qsaved', {}); m[key] = 1; store.set('nz-qsaved', m); toast('অডিও অফলাইনে সংরক্ষিত হয়েছে'); }
-  else toast(`${bn(fail)}টি আয়াতের অডিও নামানো যায়নি — আবার চেষ্টা করুন`);
-  updateSaveBtn();
-}
+async function saveAudio() { if (cur) { await DL.toggle(reciter, cur.n); updateSaveBtn(); } }
+setInterval(() => { if (cur && !$('#qReader').classList.contains('hidden') && DL.queue) updateSaveBtn(); }, 700);
+document.addEventListener('nz-dl', e => { updateSaveBtn(); if (IDX && $('#qList').children.length) renderList(); });
 async function saveAllText() {
   const b = $('#qSaveText'); b.disabled = true; let d = 0;
   await index();
@@ -238,7 +223,7 @@ document.addEventListener('nz-tab', e => {
 });
 let qt; document.addEventListener('input', e => { if (e.target.id === 'qSearch') { clearTimeout(qt); qt = setTimeout(renderList, 150); } });
 document.addEventListener('change', e => {
-  if (e.target.id === 'qReciter') { reciter = e.target.value; store.set('nz-reciter', reciter); updateSaveBtn(); if (pl.n) play(); toast('ক্বারী: ' + rc()[2]); }
+  if (e.target.id === 'qReciter') { setReciter(e.target.value); toast('ক্বারী: ' + rc()[2]); }
   if (e.target.id === 'qAuto') store.set('nz-qauto', e.target.checked);
 });
 function gotoQuran(n, from, to, autoplay) {
@@ -268,7 +253,7 @@ document.addEventListener('click', e => {
 });
 $('#qAuto') && ($('#qAuto').checked = store.get('nz-qauto', false));
 if (store.get('nz-qtext', false) && $('#qSaveText')) $('#qSaveText').textContent = '✅ পুরো কুরআনের টেক্সট অফলাইনে আছে';
-window.NZQ = { openSurah, player, index, closeReader };
+window.NZQ = { openSurah, player, index, closeReader, setReciter, reciter: () => reciter };
 // deep link: #quran/18 or #quran/2:255
 const m = location.hash.match(/^#quran\/(\d+)(?::(\d+))?/);
 if (m) document.addEventListener('DOMContentLoaded', () => setTimeout(() => openSurah(Math.min(114, Math.max(1, +m[1])), +(m[2] || 1)), 0));

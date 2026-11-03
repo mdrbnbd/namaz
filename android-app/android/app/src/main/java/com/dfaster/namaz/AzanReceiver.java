@@ -14,7 +14,8 @@ public class AzanReceiver extends BroadcastReceiver {
         if (at > 0 && System.currentTimeMillis() - at > 15 * 60 * 1000L) return;
         Intent s = new Intent(ctx, AzanService.class)
                 .putExtra("title", intent.getStringExtra("title"))
-                .putExtra("body", intent.getStringExtra("body"));
+                .putExtra("body", intent.getStringExtra("body"))
+                .putExtra("sound", intent.getStringExtra("sound"));
         ContextCompat.startForegroundService(ctx, s);
     }
 }

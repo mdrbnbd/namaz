@@ -5,5 +5,5 @@ APP="$(cd "$(dirname "$0")" && pwd)"
 SRC="${NAMAZ_SRC:-$APP/..}"
 rm -rf "$APP/www" && mkdir "$APP/www"
 cd "$SRC"
-for f in index.html styles.css app.js districts.js install.js quran.js native.js sw.js manifest.json; do cp "$f" "$APP/www/"; done
+for f in index.html styles.css app.js districts.js install.js offline.js quran.js native.js sw.js manifest.json; do cp "$f" "$APP/www/"; done
 cp -r icons data "$APP/www/"

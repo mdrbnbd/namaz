@@ -6,7 +6,7 @@
 <title>নামাজের সময়সূচি ও হাদিস | dfaster</title>
 <meta name="description" content="বাংলাদেশের ৬৪ জেলার আজকের নামাজের সময়সূচি, ওয়াক্তের বিস্তারিত, রাকাত সংখ্যা, সেহরি-ইফতার, নিষিদ্ধ সময় ও সালাত বিষয়ক সহীহ হাদিস।">
 <meta name="theme-color" content="#0f766e">
-<link rel="manifest" href="manifest.json?v=4">
+<link rel="manifest" href="manifest.json?v=5">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="নামাজ">
@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=4">
+<link rel="stylesheet" href="styles.css?v=5">
 <script>try{var t=localStorage.getItem('nz-theme');if(!t)t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t}catch(e){}</script>
 </head>
 <body>
@@ -48,7 +48,7 @@
       <div class="card-h"><h2>🔊 আযান (অ্যাপ বন্ধ থাকলেও বাজবে)</h2></div>
       <div id="azanToggles"></div>
       <p class="hint" id="azanNote"></p>
-      <button class="btn ghost" id="azanTest">▶ আযান শুনে দেখুন</button>
+      <div class="r-actions"><button class="btn ghost" id="azanTest">▶ আযান শুনে দেখুন</button><button class="btn ghost" id="azanTestF">▶ ফজরের আযান</button></div>
     </div>
   </section>
 
@@ -105,6 +105,7 @@
     <button data-tab="quran">আল-কুরআন</button>
     <button data-tab="guide">কোন ওয়াক্তে কোন সূরা</button>
     <button data-tab="month">মাসিক সময়সূচি</button>
+    <button data-tab="dl">ডাউনলোড</button>
   </nav>
 
   <section class="tab" id="tab-waqt">
@@ -137,9 +138,10 @@
           <label class="field">ক্বারী (তিলাওয়াত)<select id="qReciter"></select></label>
           <label class="q-auto"><input type="checkbox" id="qAuto"> সূরা শেষে পরের সূরা চালু</label>
         </div>
+        <button class="btn ghost dl-link" onclick="NZ.showTab('dl')">⬇️ অফলাইন ডাউনলোড — ইন্টারনেট ছাড়াই তিলাওয়াত শুনুন ›</button>
         <div id="qList" class="s-list"></div>
         <button class="btn ghost" id="qSaveText">📥 পুরো কুরআনের টেক্সট অফলাইনে রাখুন (~৪ MB)</button>
-        <p class="hint">আরবি পাঠ: উসমানী রসমে (Tanzil / api.alquran.cloud, quran-uthmani)। বাংলা অনুবাদ: <b>মাওলানা মুহিউদ্দীন খান</b> (api.alquran.cloud, bn.bengali)। অডিও: everyayah.com থেকে আয়াতভিত্তিক স্ট্রিম হয় — শোনার জন্য ইন্টারনেট লাগবে, চাইলে প্রতিটি সূরার অডিও অফলাইনে রাখা যায়।</p>
+        <p class="hint">আরবি পাঠ: উসমানী রসমে (Tanzil / api.alquran.cloud, quran-uthmani)। বাংলা অনুবাদ: <b>মাওলানা মুহিউদ্দীন খান</b> (api.alquran.cloud, bn.bengali)। অডিও: everyayah.com থেকে আয়াতভিত্তিক স্ট্রিম হয় — শোনার জন্য ইন্টারনেট লাগবে; “অফলাইন ডাউনলোড” থেকে যেকোনো সূরা বা পুরো কুরআন ফোনে রেখে দিলে ইন্টারনেট ছাড়াই শোনা যাবে।</p>
       </div>
     </div>
     <div id="qReader" class="hidden">
@@ -186,6 +188,27 @@
     </div>
   </section>
 
+  <section class="tab hidden" id="tab-dl">
+    <div class="card">
+      <div class="card-h"><h2>⬇️ অফলাইন ডাউনলোড</h2><span class="muted small">সূরার তিলাওয়াত</span></div>
+      <label class="field">ক্বারী (প্রতিটি ডাউনলোড নির্দিষ্ট ক্বারীর কণ্ঠে)<select id="dlReciter"></select></label>
+      <p class="dl-sum" id="dlSum"></p>
+      <div class="dl-prog hidden" id="dlProg">
+        <div class="dl-pt"><b id="dlNow"></b><small id="dlPct" class="muted"></small></div>
+        <div class="dl-bar"><i id="dlBar"></i></div>
+        <div class="r-actions"><button class="btn ghost" id="dlPause">⏸ বিরতি</button><button class="btn ghost" id="dlCancel">✕ বাতিল</button></div>
+      </div>
+      <div class="r-actions"><button class="btn" id="dlAll">⬇️ সব ১১৪ সূরা ডাউনলোড</button><button class="btn ghost" id="dlDelAll">🗑 এই ক্বারীর সব মুছুন</button></div>
+      <p class="hint" id="dlPersist"></p>
+      <p class="hint">বড় ডাউনলোডের জন্য Wi-Fi ব্যবহার করুন। মাঝপথে বিরতি দিতে পারবেন; অ্যাপ বন্ধ হয়ে গেলেও পরে যেখানে থেমেছিল সেখান থেকে চলবে। ডাউনলোড করা সূরা চালালে ইন্টারনেট লাগে না।</p>
+    </div>
+    <div class="card">
+      <input class="search" id="dlSearch" type="search" placeholder="সূরা খুঁজুন: নাম বা নম্বর">
+      <div class="chips"><button class="chip on" data-dlf="all">সব সূরা</button><button class="chip" data-dlf="saved">✅ ডাউনলোড করা</button></div>
+      <div id="dlList" class="s-list"></div>
+    </div>
+  </section>
+
   <footer class="foot">
     <p>নামাজের সময়: <a href="https://aladhan.com/prayer-times-api" target="_blank" rel="noopener">Aladhan API</a> (University of Islamic Sciences, Karachi; ফজর ও এশা ১৮°)। হাদিস: <a href="https://github.com/fawazahmed0/hadith-api" target="_blank" rel="noopener">fawazahmed0/hadith-api</a> — সহীহ বুখারী ও সহীহ মুসলিমের বাংলা ও আরবি সংস্করণ, হুবহু।</p>
     <p>স্থানীয় মসজিদের জামাআতের সময়ের সাথে ১–২ মিনিট পার্থক্য হতে পারে। হিজরি তারিখ চাঁদ দেখার উপর নির্ভরশীল।</p>
@@ -214,11 +237,20 @@
   <button class="qb-t" id="qbTitle"><b id="qbName"></b><small id="qbSub"></small></button>
   <div class="qb-c"><button id="qbPrev" aria-label="আগের আয়াত">⏮</button><button id="qbPlay" aria-label="চালু/বিরতি">⏸</button><button id="qbNext" aria-label="পরের আয়াত">⏭</button><button id="qbStop" aria-label="বন্ধ">✕</button></div>
 </div>
+<nav class="bnav" id="bnav" aria-label="প্রধান মেনু">
+  <button id="bnBack" aria-label="পেছনে"><i>‹</i><span>পেছনে</span></button>
+  <button data-go="waqt" class="on" aria-current="page"><i>🏠</i><span>হোম</span></button>
+  <button data-go="quran"><i>📖</i><span>কুরআন</span></button>
+  <button data-go="hadith"><i>📜</i><span>হাদিস</span></button>
+  <button data-go="guide"><i>🕋</i><span>সূরা গাইড</span></button>
+  <button data-go="dl"><i>⬇️</i><span>ডাউনলোড</span></button>
+</nav>
 <div class="toast hidden" id="toast"></div>
-<script src="districts.js?v=4"></script>
-<script src="quran.js?v=4"></script>
-<script src="app.js?v=4"></script>
-<script src="install.js?v=4"></script>
-<script src="native.js?v=4"></script>
+<script src="districts.js?v=5"></script>
+<script src="offline.js?v=5"></script>
+<script src="quran.js?v=5"></script>
+<script src="app.js?v=5"></script>
+<script src="install.js?v=5"></script>
+<script src="native.js?v=5"></script>
 </body>
 </html>

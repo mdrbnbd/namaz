@@ -19,7 +19,7 @@ import android.os.PowerManager;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.ServiceCompat;
 
-/** Foreground service that plays the full azan (res/raw/azan.ogg) once, with a "বন্ধ করুন" (stop) action. */
+/** Foreground service that plays the full azan once (res/raw/azan.ogg, or res/raw/azan_fajr.ogg when sound=="fajr"), with a "বন্ধ করুন" (stop) action. */
 public class AzanService extends Service {
     static final String CH = "azan_v1";
     static final String STOP = "com.dfaster.namaz.STOP_AZAN";
@@ -65,11 +65,11 @@ public class AzanService extends Service {
                 .build();
         int type = Build.VERSION.SDK_INT >= 29 ? ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK : 0;
         ServiceCompat.startForeground(this, NID, n, type);
-        play();
+        play(intent != null && "fajr".equals(intent.getStringExtra("sound")) ? R.raw.azan_fajr : R.raw.azan);
         return START_NOT_STICKY;
     }
 
-    private void play() {
+    private void play(int res) {
         stopPlayer();
         audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         // respect silent / vibrate mode: show the notification only
@@ -85,7 +85,7 @@ public class AzanService extends Service {
             mp = new MediaPlayer();
             mp.setAudioAttributes(aa);
             mp.setWakeMode(this, PowerManager.PARTIAL_WAKE_LOCK);
-            mp.setDataSource(this, Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.azan));
+            mp.setDataSource(this, Uri.parse("android.resource://" + getPackageName() + "/" + res));
             mp.setOnCompletionListener(m -> finishKeepNotification());
             mp.setOnErrorListener((m, w, e) -> { finishKeepNotification(); return true; });
             mp.prepare();
